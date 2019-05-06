@@ -2,7 +2,7 @@
 
   "use strict";
 
-  window.load = function(url, onSuccess, onError) {
+  let createXhr = function(method, url, onSuccess, onError) {
 
     let xhr = new XMLHttpRequest();
 
@@ -24,10 +24,12 @@
       onError('Запрос не успел выполниться за ' + xhr.timeout + 'мс');
     });
 
-    xhr.timeout = 10000;
+    xhr.open(method, url);
+    return xhr;
+  };
 
-    xhr.open('GET', url);
-    xhr.send();
+  window.load = function(url, onSuccess, onError) {
+    createXhr('GET', url, onSuccess, onError).send();
   };
 
 })();
