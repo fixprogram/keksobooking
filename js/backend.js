@@ -1,35 +1,48 @@
-(function() {
+(function () {
 
-  "use strict";
+  'use strict';
 
-  let createXhr = function(method, url, onSuccess, onError) {
+  const ServerUrl = {
+    LOAD: 'https://js.dump.academy/keksobooking/data',
+    UPLOAD: 'https://js.dump.academy/keksobooking'
+  };
 
+  const MessageText = {
+    ERROR_LOAD: 'Произошла неизвестная ошибка. Пожалуйста, обновите страницу.',
+    ERROR_SERVER: 'Произошла ошибка соединения. Пожалуйста, обновите страницу.',
+    ERROR_TIMEOUT: 'Сервер долго не отвечает. Пожалуйста, обновите страницу.'
+  };
+
+  let createXhr = function (method, url, onLoad, onError) {
     let xhr = new XMLHttpRequest();
-
     xhr.responseType = 'json';
-
-    xhr.addEventListener('load', function(){
-      if(xhr.status === 200) {
-        onSuccess(xhr.response);
+    xhr.addEventListener('load', function () {
+      if (xhr.status === 200) {
+        onLoad(xhr.response);
       } else {
-        onError('Статус ответа: ' + xhr.status + ' ' + xhr.statusText);
+        onError(MessageText.ERROR_LOAD);
       }
     });
-
-    xhr.addEventListener('error', function() {
-      onError('Произошла ошибка соединения');
+    xhr.addEventListener('error', function () {
+      onError(MessageText.ERROR_SERVER);
     });
-
-    xhr.addEventListener('timeout', function() {
-      onError('Запрос не успел выполниться за ' + xhr.timeout + 'мс');
+    xhr.addEventListener('timeout', function () {
+      onError(MessageText.ERROR_TIMEOUT);
     });
-
     xhr.open(method, url);
     return xhr;
   };
 
-  window.load = function(url, onSuccess, onError) {
-    createXhr('GET', url, onSuccess, onError).send();
+  let load = function (onLoad, onError) {
+    createXhr('GET', ServerUrl.LOAD, onLoad, onError).send();
   };
 
+  let upload = function (onLoad, onError, data) {
+    createXhr('POST', ServerUrl.UPLOAD, onLoad, onError).send(data);
+  };
+
+  window.backend = {
+    load: load,
+    upload: upload
+  };
 })();
