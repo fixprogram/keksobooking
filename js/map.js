@@ -12,6 +12,27 @@
     house: 'Дом',
     palace: 'Дворец'
   };
+  let dragged = false;
+  let form = document.querySelector('.ad-form');
+  let formAddress = document.getElementById('address');
+  let formFieldsets = document.querySelectorAll('.ad-form__element');
+  const pinSize = {
+    width: 65,
+    height: 65
+  };
+  const dragLimit = {
+    X: {
+      MIN: 0,
+      MAX: 1200
+    },
+    Y: {
+      MIN: 130,
+      MAX: 630
+    }
+  };
+  const tailHeight = 16;
+
+  formAddress.value = '600, 375';
 
   let createEl = function(tagName, className, content, addition) {
     let el = document.createElement(tagName);
@@ -109,9 +130,10 @@
   };
 
   let addPins = function(adData) {
-    for(let i = 0; i < adData.length; i++) {
-      mapPins.appendChild(createPin(adData[i]));
-    }
+    // for(let i = 0; i < adData.length; i++) {
+    //   mapPins.appendChild(createPin(adData[i]));
+    // }
+    adData.forEach((data) => mapPins.appendChild(createPin(data)));
   };
 
   let addClickListener = function(mapPin, data) {
@@ -126,11 +148,13 @@
         btnPopupClose.addEventListener('click', function(evt){
           map.removeChild(card);
         });
-        window.addEventListener('keydown', function(evt){
-          if(evt.keyCode === 27) {
-            map.removeChild(card);
-          }
-        });
+        if(popup) {
+          window.addEventListener('keydown', function(evt){
+            if(evt.keyCode === 27) {
+              map.removeChild(card);
+            }
+          });
+        }
       });
   };
 
@@ -157,14 +181,85 @@
 
   let renderMap = function() {
     map.classList.remove('map--faded');
+    form.classList.remove('ad-form--disabled');
     window.load('https://js.dump.academy/keksobooking/data', onSuccess, onError);
+    pinMain.removeEventListener('mouseup', renderMap);
+    formFieldsets.forEach((it) => it.disabled = false);
   };
 
   let pinMain = document.querySelector('.map__pin--main');
 
-  pinMain.addEventListener('click', function(){
-    renderMap();
-    pinMain.disabled = true;
+  pinMain.addEventListener('mouseup', renderMap);
+
+  ////// Drag n Drop
+
+  pinMain.addEventListener('mousedown', function(evt){
+    evt.preventDefault();
+
+    let startCoords = {
+      x: evt.clientX,
+      y: evt.clientY
+    };
+
+    let onMouseMove = function(moveEvt) {
+      moveEvt.preventDefault();
+      let shift = {
+        x: startCoords.x - moveEvt.clientX,
+        y: startCoords.y - moveEvt.clientY
+      };
+
+      startCoords = {
+        x: moveEvt.clientX,
+        y: moveEvt.clientY
+      };
+
+      let pinMainPosition = {
+        x: pinMain.offsetLeft - shift.x,
+        y: pinMain.offsetTop - shift.y
+      };
+
+      // pinMain.style.top = pinMainPosition.y + 'px';
+      // pinMain.style.left = pinMainPosition.x + 'px';
+
+      var Border = {
+        TOP: dragLimit.Y.MIN - pinMain.offsetHeight - tailHeight,
+        BOTTOM: dragLimit.Y.MAX - pinMain.offsetHeight - tailHeight,
+        LEFT: dragLimit.X.MIN,
+        RIGHT: dragLimit.X.MAX - pinMain.offsetWidth
+      };
+      if (pinMainPosition.x >= Border.LEFT && pinMainPosition.x <= Border.RIGHT) {
+        pinMain.style.left = pinMainPosition.x + 'px';
+      }
+      if (pinMainPosition.y >= Border.TOP && pinMainPosition.y <= Border.BOTTOM) {
+        pinMain.style.top = pinMainPosition.y + 'px';
+      }
+
+      let pinTailPosition = {
+        x: pinMainPosition.x + Math.ceil(pinSize.width / 2),
+        y: pinMainPosition.y + pinSize.height + tailHeight
+      };
+
+      formAddress.value = pinTailPosition.x + ', ' + pinTailPosition.y;
+      //window.form.setAddress(pinTailPosition.x, pinTailPosition.y);
+    };
+
+    let onMouseUp = function(upEvt) {
+      upEvt.preventDefault();
+
+      if(dragged) {
+        let onClickPreventDefault = function(evt) {
+          evt.preventDefault();
+          pinMain.removeEventListener('click', onClickPreventDefault);
+        };
+        pinMain.addEventListener('click', onClickPreventDefault);
+      }
+
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mousedup', onMouseUp);
+    };
+
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
   });
 
 })();
